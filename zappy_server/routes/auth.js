@@ -59,4 +59,20 @@ router.get('/users', async (req, res) => {
   }
 });
 
+router.put('/profile', async (req, res) => {
+  const { displayName, username, bio, avatarColor } = req.body;
+  const db = req.app.locals.db;
+  const userId = req.user.id;
+  try {
+    await db.query(
+      'UPDATE users SET display_name = $1, username = $2, bio = $3, avatar_color = $4 WHERE id = $5',
+      [displayName, username, bio, avatarColor, userId]
+    );
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
 module.exports = router;

@@ -4,21 +4,33 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
+import { SERVER_URL } from '../config';
 
 const AVATAR_COLORS = ['#7F77DD', '#D4537E', '#EF9F27', '#1D9E75', '#378ADD', '#D85A30'];
 
-export default function ProfileScreen({ navigation }) {
-  const [displayName, setDisplayName] = useState('Ana');
-  const [username, setUsername] = useState('ana_sunshine');
-  const [bio, setBio] = useState('living life ⚡');
-  const [avatarColor, setAvatarColor] = useState('#7F77DD');
-  const [editing, setEditing] = useState(false);
-  const [saved, setSaved] = useState(false);
+export default function ProfileScreen({ navigation, route }) {
+  const { user, token } = route.params ?? {};
+  const [displayName, setDisplayName] = useState(user?.displayName ?? '');
+  const [username, setUsername] = useState(user?.username ?? '');
+  const [bio, setBio] = useState(user?.bio ?? '');
+  const [avatarColor, setAvatarColor] = useState(user?.avatar_color ?? '#7F77DD');
 
-  const handleSave = () => {
-    setEditing(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+const handleSave = async () => {
+    try {
+      await fetch(`${SERVER_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ displayName, username, bio, avatarColor }),
+      });
+      setEditing(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.log('save profile error:', e);
+    }
   };
 
   return (
