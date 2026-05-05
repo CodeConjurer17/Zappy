@@ -1,0 +1,11 @@
+# Server
+zappy_server/.env
+zappy_server/node_modules/
+
+# Expo / React Native
+zappy/node_modules/
+zappy/.expo/
+
+# General
+.DS_Store
+*.log
