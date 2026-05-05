@@ -5,8 +5,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { SERVER_URL } from '../config';
+import { getSocket } from '../socket';
 
 const AVATAR_COLORS = ['#7F77DD', '#D4537E', '#EF9F27', '#1D9E75', '#378ADD', '#D85A30'];
+const socket = getSocket();
+if (socket) socket.emit('friend_request', { toUserId });
 
 export default function AddFriendScreen({ navigation, route }) {
   const { user, token } = route.params ?? {};

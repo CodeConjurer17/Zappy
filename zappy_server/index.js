@@ -59,6 +59,22 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('friend_request', (data) => {
+    const { toUserId } = data;
+    const recipientSocketId = onlineUsers.get(toUserId.toString());
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('friend_request_received');
+    }
+  });
+
+  socket.on('friend_accepted', (data) => {
+    const { toUserId } = data;
+    const recipientSocketId = onlineUsers.get(toUserId.toString());
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('friend_accepted');
+    }
+  });
+
   socket.on('disconnect', () => {
     onlineUsers.forEach((socketId, userId) => {
       if (socketId === socket.id) onlineUsers.delete(userId);

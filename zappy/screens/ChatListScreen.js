@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { SERVER_URL } from '../config';
+import { getSocket, connectSocket } from '../socket';
 
 const AVATAR_COLORS = ['#7F77DD', '#D4537E', '#EF9F27', '#1D9E75', '#378ADD', '#D85A30'];
 
@@ -22,6 +23,23 @@ export default function ChatListScreen({ navigation, route }) {
     }, [])
   );
 
+  useEffect(() => {
+    const socket = connectSocket(user.id);
+
+    socket.on('friend_request_received', () => {
+      fetchPendingCount();
+    });
+
+    socket.on('friend_accepted', () => {
+      fetchFriends();
+    });
+
+    return () => {
+      socket.off('friend_request_received');
+      socket.off('friend_accepted');
+    };
+  }, []);
+  
   const fetchFriends = async () => {
     try {
       const res = await fetch(`${SERVER_URL}/friends/list/${user.id}`, {
