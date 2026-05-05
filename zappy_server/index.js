@@ -4,13 +4,24 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const { Pool } = require('pg');
+const rateLimit = require('express-rate-limit');
+
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per 15 minutes per IP
+  message: { error: 'too many requests, please try again later' }
+});
 
-app.use(cors());
+app.use(cors({
+  origin: 'https://zappy.gasparici.com',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
 app.use(express.json());
+app.use(limiter);
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 pool.connect()
@@ -22,10 +33,11 @@ app.locals.db = pool;
 const authRoutes = require('./routes/auth');
 const messageRoutes = require('./routes/messages');
 const friendRoutes = require('./routes/friends');
+const authMiddleware = require('./middleware/auth');
 
 app.use('/auth', authRoutes);
-app.use('/messages', messageRoutes);
-app.use('/friends', friendRoutes);
+app.use('/messages', authMiddleware, messageRoutes);
+app.use('/friends', authMiddleware, friendRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'Zappy server running!' }));
 
