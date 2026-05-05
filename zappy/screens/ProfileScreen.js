@@ -114,12 +114,6 @@ const handleSave = async () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>settings</Text>
 
-          <TouchableOpacity style={styles.settingRow} onPress={() => navigation.navigate('ChatList')}>
-            <Text style={styles.settingIcon}>💬</Text>
-            <Text style={styles.settingLabel}>chats</Text>
-            <Text style={styles.settingArrow}>→</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.settingRow}>
             <Text style={styles.settingIcon}>🔔</Text>
             <Text style={styles.settingLabel}>notifications</Text>

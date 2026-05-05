@@ -30,7 +30,10 @@ export default function LoginScreen({ navigation }) {
         setError(data.error || 'login failed');
         return;
       }
-      navigation.navigate('ChatList', { user: data.user, token: data.token });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ChatList', params: { user: data.user, token: data.token } }],
+      });
     } catch (e) {
       setError('cannot reach server — check your WiFi');
     } finally {
