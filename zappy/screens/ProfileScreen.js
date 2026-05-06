@@ -14,6 +14,8 @@ export default function ProfileScreen({ navigation, route }) {
   const [username, setUsername] = useState(user?.username ?? '');
   const [bio, setBio] = useState(user?.bio ?? '');
   const [avatarColor, setAvatarColor] = useState(user?.avatar_color ?? '#7F77DD');
+  const [editing, setEditing] = useState(false);
+  const [saved, setSaved] = useState(false);
 
 const handleSave = async () => {
     try {
@@ -127,7 +129,7 @@ const handleSave = async () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={() => navigation.navigate('Login')}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] })}>
           <Text style={styles.logoutText}>log out</Text>
         </TouchableOpacity>
 

@@ -151,13 +151,21 @@ export default function MessageScreen({ route, navigation }) {
     const socket = getSocket();
     socketRef.current = socket;
 
-    socket.on('receive_message', (message) => {
+    const handleMessage = (message) => {
       setMessages(prev => [...prev, message]);
       setTimeout(() => scrollToBottom(), 50);
-    });
+    };
+
+    if (socket.connected) {
+      socket.on('receive_message', handleMessage);
+    } else {
+      socket.on('connect', () => {
+        socket.on('receive_message', handleMessage);
+      });
+    }
 
     return () => {
-      socket.off('receive_message');
+      socket.off('receive_message', handleMessage);
     };
   }, []);
 
