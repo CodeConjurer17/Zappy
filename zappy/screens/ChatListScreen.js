@@ -15,11 +15,13 @@ export default function ChatListScreen({ navigation, route }) {
   const [friends, setFriends] = useState([]);
   const [pending, setPending] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [unread, setUnread] = useState({});
 
   useFocusEffect(
     useCallback(() => {
       fetchFriends();
       fetchPendingCount();
+      fetchUnread();
     }, [])
   );
 
@@ -34,12 +36,17 @@ export default function ChatListScreen({ navigation, route }) {
       fetchFriends();
     });
 
+    socket.on('receive_message', () => {
+      fetchUnread();
+    });
+
     return () => {
       socket.off('friend_request_received');
       socket.off('friend_accepted');
+      socket.off('receive_message');
     };
   }, []);
-  
+
   const fetchFriends = async () => {
     try {
       const res = await fetch(`${SERVER_URL}/friends/list/${user.id}`, {
@@ -61,6 +68,16 @@ export default function ChatListScreen({ navigation, route }) {
       });
       const data = await res.json();
       setPending(data.length);
+    } catch (e) {}
+  };
+
+  const fetchUnread = async () => {
+    try {
+      const res = await fetch(`${SERVER_URL}/messages/unread/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setUnread(data);
     } catch (e) {}
   };
 
@@ -86,7 +103,7 @@ export default function ChatListScreen({ navigation, route }) {
             style={styles.iconBtn}
             onPress={() => navigation.navigate('AddFriend', { user, token })}
           >
-            <Text style={styles.iconBtnText}>➕</Text>
+            <Text style={styles.iconBtnText}>+</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => navigation.navigate('Profile', { user, token })}>
             <View style={[styles.headerAvatar, { backgroundColor: getColor(user?.id ?? 0) }]}>
@@ -105,34 +122,44 @@ export default function ChatListScreen({ navigation, route }) {
       {!loading && friends.length === 0 && (
         <View style={styles.center}>
           <Text style={styles.emptyText}>no friends yet</Text>
-          <Text style={styles.emptySubText}>tap ➕ to add someone!</Text>
+          <Text style={styles.emptySubText}>tap + to add someone!</Text>
         </View>
       )}
 
       <FlatList
         data={friends}
         keyExtractor={item => item.id.toString()}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.chatRow}
-            onPress={() => navigation.navigate('Message', {
-              name: item.display_name,
-              color: getColor(item.id),
-              userId: user.id,
-              toUserId: item.id,
-              token,
-            })}
-          >
-            <View style={[styles.avatar, { backgroundColor: getColor(item.id) }]}>
-              <Text style={styles.avatarText}>{item.display_name[0].toUpperCase()}</Text>
-            </View>
-            <View style={styles.chatInfo}>
-              <Text style={styles.chatName}>{item.display_name}</Text>
-              <Text style={styles.chatMsg}>@{item.username}</Text>
-            </View>
-            <Text style={styles.arrow}>→</Text>
-          </TouchableOpacity>
-        )}
+        renderItem={({ item }) => {
+          const unreadCount = unread[item.id] ?? 0;
+          return (
+            <TouchableOpacity
+              style={styles.chatRow}
+              onPress={() => navigation.navigate('Message', {
+                name: item.display_name,
+                color: getColor(item.id),
+                userId: user.id,
+                toUserId: item.id,
+                token,
+              })}
+            >
+              <View style={[styles.avatar, { backgroundColor: getColor(item.id) }]}>
+                <Text style={styles.avatarText}>{item.display_name[0].toUpperCase()}</Text>
+              </View>
+              <View style={styles.chatInfo}>
+                <Text style={[styles.chatName, unreadCount > 0 && styles.chatNameUnread]}>
+                  {item.display_name}
+                </Text>
+                <Text style={styles.chatMsg}>@{item.username}</Text>
+              </View>
+              {unreadCount > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadText}>{unreadCount}</Text>
+                </View>
+              )}
+              <Text style={styles.arrow}>→</Text>
+            </TouchableOpacity>
+          );
+        }}
       />
     </SafeAreaView>
   );
@@ -157,6 +184,9 @@ const styles = StyleSheet.create({
   avatarText: { color: 'white', fontSize: 16, fontWeight: '600' },
   chatInfo: { flex: 1 },
   chatName: { color: 'white', fontSize: 14, fontWeight: '500' },
+  chatNameUnread: { color: 'white', fontWeight: '700' },
   chatMsg: { color: '#888', fontSize: 12, marginTop: 2 },
+  unreadBadge: { backgroundColor: '#7F77DD', borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 5, marginRight: 6 },
+  unreadText: { color: 'white', fontSize: 11, fontWeight: '700' },
   arrow: { color: '#444', fontSize: 16 },
 });

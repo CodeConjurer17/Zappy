@@ -176,6 +176,14 @@ export default function MessageScreen({ route, navigation }) {
         replyTo: m.reply_to || null,
       }));
       setMessages(formatted);
+      await fetch(`${SERVER_URL}/messages/read`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId, otherUserId: toUserId }),
+      });
       setTimeout(() => scrollToBottom(), 100);
     } catch (e) {
       console.log('fetch messages error:', e);
