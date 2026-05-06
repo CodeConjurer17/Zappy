@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { SERVER_URL } from '../config';
-import { io } from 'socket.io-client';
+import { getSocket } from '../socket';
 
 const SWIPE_THRESHOLD = 60;
 
@@ -148,19 +148,17 @@ export default function MessageScreen({ route, navigation }) {
   useEffect(() => {
     fetchMessages();
 
-    const socket = io(SERVER_URL, { transports: ['websocket'] });
+    const socket = getSocket();
     socketRef.current = socket;
-
-    socket.on('connect', () => {
-      socket.emit('join', userId.toString());
-    });
 
     socket.on('receive_message', (message) => {
       setMessages(prev => [...prev, message]);
       setTimeout(() => scrollToBottom(), 50);
     });
 
-    return () => socket.disconnect();
+    return () => {
+      socket.off('receive_message');
+    };
   }, []);
 
   const fetchMessages = async () => {

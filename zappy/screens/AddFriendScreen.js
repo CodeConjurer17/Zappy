@@ -8,8 +8,6 @@ import { SERVER_URL } from '../config';
 import { getSocket } from '../socket';
 
 const AVATAR_COLORS = ['#7F77DD', '#D4537E', '#EF9F27', '#1D9E75', '#378ADD', '#D85A30'];
-const socket = getSocket();
-if (socket) socket.emit('friend_request', { toUserId });
 
 export default function AddFriendScreen({ navigation, route }) {
   const { user, token } = route.params ?? {};
@@ -54,6 +52,8 @@ export default function AddFriendScreen({ navigation, route }) {
         return;
       }
       setSent(prev => ({ ...prev, [toUserId]: 'sent' }));
+      const socket = getSocket();
+      if (socket) socket.emit('friend_request', { toUserId: toUserId.toString() });
     } catch (e) {
       setSent(prev => ({ ...prev, [toUserId]: 'error' }));
     }
