@@ -8,6 +8,7 @@ export const getSocket = () => socket;
 
 export const connectSocket = (userId) => {
   if (socket && socket.connected && currentUserId === userId) {
+    console.log('connectSocket called for user:', userId);
     return socket;
   }
 

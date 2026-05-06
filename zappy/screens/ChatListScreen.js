@@ -27,7 +27,8 @@ export default function ChatListScreen({ navigation, route }) {
 
   useEffect(() => {
     const socket = connectSocket(user.id);
-
+    console.log('ChatList socket:', socket?.id, socket?.connected);
+    
     socket.on('friend_request_received', () => {
       fetchPendingCount();
     });
