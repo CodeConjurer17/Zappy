@@ -5,6 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { SERVER_URL } from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AVATAR_COLORS = ['#7F77DD', '#D4537E', '#EF9F27', '#1D9E75', '#378ADD', '#D85A30'];
 
@@ -17,7 +18,7 @@ export default function ProfileScreen({ navigation, route }) {
   const [editing, setEditing] = useState(false);
   const [saved, setSaved] = useState(false);
 
-const handleSave = async () => {
+  const handleSave = async () => {
     try {
       await fetch(`${SERVER_URL}/auth/profile`, {
         method: 'PUT',
@@ -35,10 +36,15 @@ const handleSave = async () => {
     }
   };
 
+  const handleLogout = async () => {
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('user');
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
-
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backText}>← back</Text>
@@ -115,13 +121,11 @@ const handleSave = async () => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>settings</Text>
-
           <TouchableOpacity style={styles.settingRow}>
             <Text style={styles.settingIcon}>🔔</Text>
             <Text style={styles.settingLabel}>notifications</Text>
             <Text style={styles.settingArrow}>→</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.settingRow}>
             <Text style={styles.settingIcon}>🔒</Text>
             <Text style={styles.settingLabel}>privacy & security</Text>
@@ -129,10 +133,9 @@ const handleSave = async () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.logoutBtn} onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Login' }] })}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
           <Text style={styles.logoutText}>log out</Text>
         </TouchableOpacity>
-
       </ScrollView>
     </SafeAreaView>
   );

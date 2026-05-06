@@ -5,6 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { SERVER_URL } from '../config';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -30,6 +31,8 @@ export default function LoginScreen({ navigation }) {
         setError(data.error || 'login failed');
         return;
       }
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('user', JSON.stringify(data.user));
       navigation.reset({
         index: 0,
         routes: [{ name: 'ChatList', params: { user: data.user, token: data.token } }],

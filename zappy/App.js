@@ -1,6 +1,9 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ActivityIndicator, View } from 'react-native';
 import LoginScreen from './screens/LoginScreen';
 import ChatListScreen from './screens/ChatListScreen';
 import MessageScreen from './screens/MessageScreen';
@@ -14,6 +17,36 @@ import PendingRequestsScreen from './screens/PendingRequestsScreen';
 const Stack = createStackNavigator();
 
 export default function App() {
+  const [checking, setChecking] = useState(true);
+  const [initialRoute, setInitialRoute] = useState('Login');
+  const [initialParams, setInitialParams] = useState({});
+
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const userStr = await AsyncStorage.getItem('user');
+        if (token && userStr) {
+          setInitialRoute('ChatList');
+          setInitialParams({ token, user: JSON.parse(userStr) });
+        }
+      } catch (e) {
+        console.log('auth check error:', e);
+      } finally {
+        setChecking(false);
+      }
+    };
+    checkLogin();
+  }, []);
+
+  if (checking) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#1a1a2e', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color="#7F77DD" size="large" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer
       theme={{
@@ -31,6 +64,7 @@ export default function App() {
     >
       <StatusBar style="light" />
       <Stack.Navigator
+        initialRouteName={initialRoute}
         screenOptions={{
           headerShown: false,
           cardStyle: { backgroundColor: '#1a1a2e' },
@@ -38,31 +72,23 @@ export default function App() {
           detachPreviousScreen: false,
           gestureEnabled: false,
           transitionSpec: {
-            open: {
-              animation: 'timing',
-              config: { duration: 300 },
-            },
-            close: {
-              animation: 'timing',
-              config: { duration: 300 },
-            },
+            open: { animation: 'timing', config: { duration: 300 } },
+            close: { animation: 'timing', config: { duration: 300 } },
           },
           cardStyleInterpolator: ({ current, layouts }) => ({
             cardStyle: {
-              transform: [
-                {
-                  translateX: current.progress.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [layouts.screen.width, 0],
-                  }),
-                },
-              ],
+              transform: [{
+                translateX: current.progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [layouts.screen.width, 0],
+                }),
+              }],
             },
           }),
         }}
       >
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="ChatList" component={ChatListScreen} />
+        <Stack.Screen name="ChatList" component={ChatListScreen} initialParams={initialParams} />
         <Stack.Screen name="Message" component={MessageScreen} />
         <Stack.Screen name="Camera" component={CameraScreen} />
         <Stack.Screen name="SignUp" component={SignUpScreen} />
