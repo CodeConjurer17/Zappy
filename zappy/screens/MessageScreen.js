@@ -128,6 +128,7 @@ export default function MessageScreen({ route, navigation }) {
   const [background, setBackground] = useState({ id: 'default', type: 'solid', value: '#1a1a2e' });
   const flatListRef = useRef(null);
   const socketRef = useRef(null);
+  const inputRef = useRef(null);
   const prevSentImage = useRef(null);
 
   const sentImage = route.params?.sentImage;
@@ -142,7 +143,7 @@ export default function MessageScreen({ route, navigation }) {
       replyTo: null,
     };
     setMessages(prev => [...prev, imgMsg]);
-    setTimeout(() => scrollToBottom(), 50);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
   }
 
   useEffect(() => {
@@ -153,7 +154,7 @@ export default function MessageScreen({ route, navigation }) {
 
     const handleMessage = (message) => {
       setMessages(prev => [...prev, message]);
-      setTimeout(() => scrollToBottom(), 50);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
     };
 
     if (socket.connected) {
@@ -192,14 +193,10 @@ export default function MessageScreen({ route, navigation }) {
         },
         body: JSON.stringify({ userId, otherUserId: toUserId }),
       });
-      setTimeout(() => scrollToBottom(), 100);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
     } catch (e) {
       console.log('fetch messages error:', e);
     }
-  };
-
-  const scrollToBottom = () => {
-    flatListRef.current?.scrollToEnd({ animated: true });
   };
 
   const sendMessage = async () => {
@@ -214,7 +211,7 @@ export default function MessageScreen({ route, navigation }) {
     setMessages(prev => [...prev, newMsg]);
     setInput('');
     setReplyingTo(null);
-    setTimeout(() => scrollToBottom(), 50);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
 
     try {
       const res = await fetch(`${SERVER_URL}/messages/send`, {
@@ -249,6 +246,7 @@ export default function MessageScreen({ route, navigation }) {
 
   const handleReply = useCallback((item) => {
     setReplyingTo(item);
+    setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
   const renderMessage = useCallback(({ item }) => (
@@ -297,9 +295,7 @@ export default function MessageScreen({ route, navigation }) {
             keyExtractor={item => item.id}
             renderItem={renderMessage}
             contentContainerStyle={styles.messageList}
-            onContentSizeChange={scrollToBottom}
-            onLayout={scrollToBottom}
-            maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
           />
         </View>
 
@@ -323,13 +319,14 @@ export default function MessageScreen({ route, navigation }) {
             <Text style={styles.cameraBtnIcon}>📷</Text>
           </TouchableOpacity>
           <TextInput
+            ref={inputRef}
             style={styles.input}
             placeholder="message..."
             placeholderTextColor="#555"
             value={input}
             onChangeText={setInput}
             multiline
-            onFocus={scrollToBottom}
+            onFocus={() => flatListRef.current?.scrollToEnd({ animated: true })}
           />
           <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
             <Text style={styles.sendIcon}>➤</Text>
