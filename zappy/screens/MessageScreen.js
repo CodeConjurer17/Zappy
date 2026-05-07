@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { SERVER_URL } from '../config';
 import { getSocket } from '../socket';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SWIPE_THRESHOLD = 60;
 
@@ -67,6 +68,14 @@ function PatternOverlay({ pattern }) {
 }
 
 function MessageBubble({ item, onReply }) {
+  if (item.sender === 'system') {
+    return (
+      <View style={styles.systemMsg}>
+        <Text style={styles.systemMsgText}>{item.text}</Text>
+      </View>
+    );
+  }
+
   const isMe = item.sender === 'me';
   const translateX = useRef(new Animated.Value(0)).current;
   const replyTriggered = useRef(false);
@@ -74,8 +83,17 @@ function MessageBubble({ item, onReply }) {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > 10 && Math.abs(g.dy) < 15,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, g) => {
+        const isHorizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 2;
+        const correctDirection = isMe ? g.dx < 0 : g.dx > 0;
+        return isHorizontal && correctDirection;
+      },
+      onMoveShouldSetPanResponderCapture: (_, g) => {
+        const isHorizontal = Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 2;
+        const correctDirection = isMe ? g.dx < 0 : g.dx > 0;
+        return isHorizontal && correctDirection;
+      },
       onPanResponderGrant: () => {
         replyTriggered.current = false;
       },
@@ -159,6 +177,7 @@ export default function MessageScreen({ route, navigation }) {
 
   useEffect(() => {
     fetchMessages();
+    fetchBackground();
 
     const socket = getSocket();
     socketRef.current = socket;
@@ -167,18 +186,59 @@ export default function MessageScreen({ route, navigation }) {
       setMessages(prev => [message, ...prev]);
     };
 
+    const handleBackgroundChanged = ({ background: newBg, changerName }) => {
+      setBackground(newBg);
+      setMessages(prev => [{
+        id: Date.now().toString(),
+        text: `${changerName} changed the background`,
+        sender: 'system',
+        time: '',
+        replyTo: null,
+      }, ...prev]);
+    };
+
     if (socket.connected) {
       socket.on('receive_message', handleMessage);
+      socket.on('background_changed', handleBackgroundChanged);
     } else {
       socket.on('connect', () => {
         socket.on('receive_message', handleMessage);
+        socket.on('background_changed', handleBackgroundChanged);
       });
     }
 
     return () => {
       socket.off('receive_message', handleMessage);
+      socket.off('background_changed', handleBackgroundChanged);
     };
   }, []);
+
+  const fetchBackground = async () => {
+    try {
+      const res = await fetch(`${SERVER_URL}/messages/background/${userId}/${toUserId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.background) setBackground(data.background);
+    } catch (e) {
+      console.log('fetch background error:', e);
+    }
+  };
+
+  const saveBackground = async (bg) => {
+    try {
+      await fetch(`${SERVER_URL}/messages/background`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId, otherUserId: toUserId, background: bg }),
+      });
+    } catch (e) {
+      console.log('save background error:', e);
+    }
+  };
 
   const fetchMessages = async () => {
     try {
@@ -254,6 +314,7 @@ export default function MessageScreen({ route, navigation }) {
 
   const handleReply = useCallback((item) => {
     setReplyingTo(item);
+    inputRef.current?.blur();
     setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
 
@@ -262,92 +323,117 @@ export default function MessageScreen({ route, navigation }) {
   ), [handleReply]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: background.value }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <View style={[styles.avatar, { backgroundColor: color }]}>
-          <Text style={styles.avatarText}>{name[0]}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerName}>{name}</Text>
-          <Text style={styles.onlineText}>online</Text>
-        </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('BackgroundPicker', {
-            currentBg: background,
-            chatName: name,
-            onSelect: (bg) => setBackground(bg),
-          })}
-          style={styles.bgBtn}
-        >
-          <Text style={styles.bgBtnIcon}>🎨</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      {background.type === 'gradient' && (
+        <LinearGradient colors={background.value} style={StyleSheet.absoluteFill} />
+      )}
+      {background.type === 'solid' && (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: background.value }]} />
+      )}
+      {background.type === 'pattern' && (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1a1a2e' }]} />
+      )}
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
-      >
-        <View style={{ flex: 1 }}>
-          {background.type === 'pattern' && (
-            <View style={StyleSheet.absoluteFill} pointerEvents="none">
-              <PatternOverlay pattern={background.value} />
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <View style={[styles.avatar, { backgroundColor: color }]}>
+            <Text style={styles.avatarText}>{name[0]}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerName}>{name}</Text>
+            <Text style={styles.onlineText}>online</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('BackgroundPicker', {
+              currentBg: background,
+              chatName: name,
+              userId,
+              toUserId,
+              token,
+              onSelect: (bg) => {
+                setBackground(bg);
+                saveBackground(bg);
+                setMessages(prev => [{
+                  id: Date.now().toString(),
+                  text: `you changed the background`,
+                  sender: 'system',
+                  time: '',
+                  replyTo: null,
+                }, ...prev]);
+              },
+            })}
+            style={styles.bgBtn}
+          >
+            <Text style={styles.bgBtnIcon}>🎨</Text>
+          </TouchableOpacity>
+        </View>
+
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={0}
+        >
+          <View style={{ flex: 1 }}>
+            {background.type === 'pattern' && (
+              <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                <PatternOverlay pattern={background.value} />
+              </View>
+            )}
+            <FlatList
+              data={messages}
+              keyExtractor={item => item.id}
+              renderItem={renderMessage}
+              contentContainerStyle={styles.messageList}
+              inverted
+              keyboardShouldPersistTaps="always"
+              keyboardDismissMode="none"
+            />
+          </View>
+
+          {replyingTo && (
+            <View style={styles.replyBar}>
+              <View style={styles.replyBarInner}>
+                <Text style={styles.replyBarLabel}>replying to</Text>
+                <Text style={styles.replyBarText} numberOfLines={1}>{replyingTo.text}</Text>
+              </View>
+              <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                <Text style={styles.replyCancel}>✕</Text>
+              </TouchableOpacity>
             </View>
           )}
-          <FlatList
-            data={messages}
-            keyExtractor={item => item.id}
-            renderItem={renderMessage}
-            contentContainerStyle={styles.messageList}
-            inverted
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="interactive"
-          />
-        </View>
 
-        {replyingTo && (
-          <View style={styles.replyBar}>
-            <View style={styles.replyBarInner}>
-              <Text style={styles.replyBarLabel}>replying to</Text>
-              <Text style={styles.replyBarText} numberOfLines={1}>{replyingTo.text}</Text>
-            </View>
-            <TouchableOpacity onPress={() => setReplyingTo(null)}>
-              <Text style={styles.replyCancel}>✕</Text>
+          <View style={styles.inputBar}>
+            <TouchableOpacity
+              style={styles.cameraBtn}
+              onPress={() => navigation.navigate('Camera', { userId, toUserId, token })}
+            >
+              <Text style={styles.cameraBtnIcon}>📷</Text>
+            </TouchableOpacity>
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              placeholder="message..."
+              placeholderTextColor="#555"
+              value={input}
+              onChangeText={setInput}
+              multiline
+            />
+            <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
+              <Text style={styles.sendIcon}>➤</Text>
             </TouchableOpacity>
           </View>
-        )}
-
-        <View style={styles.inputBar}>
-          <TouchableOpacity
-            style={styles.cameraBtn}
-            onPress={() => navigation.navigate('Camera', { userId, toUserId, token })}
-          >
-            <Text style={styles.cameraBtnIcon}>📷</Text>
-          </TouchableOpacity>
-          <TextInput
-            ref={inputRef}
-            style={styles.input}
-            placeholder="message..."
-            placeholderTextColor="#555"
-            value={input}
-            onChangeText={setInput}
-            multiline
-          />
-          <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
-            <Text style={styles.sendIcon}>➤</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#1a1a2e' },
-  header: { backgroundColor: '#252540', flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10, borderBottomWidth: 0.5, borderBottomColor: '#2a2a4a' },
+  header: { backgroundColor: '#252540cc', flexDirection: 'row', alignItems: 'center', padding: 12, gap: 10, borderBottomWidth: 0.5, borderBottomColor: '#2a2a4a' },
   backBtn: { padding: 4 },
   backArrow: { color: '#aaa', fontSize: 22 },
   avatar: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
@@ -368,6 +454,8 @@ const styles = StyleSheet.create({
   msgText: { color: 'white', fontSize: 14 },
   msgImage: { width: 200, height: 200, borderRadius: 12 },
   msgTime: { color: 'rgba(255,255,255,0.45)', fontSize: 10, marginTop: 4, textAlign: 'right' },
+  systemMsg: { alignItems: 'center', marginVertical: 8 },
+  systemMsgText: { color: '#555', fontSize: 11, backgroundColor: '#252540', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 10 },
   replyBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#252540', borderTopWidth: 0.5, borderTopColor: '#2a2a4a', padding: 10, gap: 10 },
   replyBarInner: { flex: 1, borderLeftWidth: 2, borderLeftColor: '#7F77DD', paddingLeft: 8 },
   replyBarLabel: { color: '#7F77DD', fontSize: 11 },
