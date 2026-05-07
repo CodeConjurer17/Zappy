@@ -73,8 +73,12 @@ function MessageBubble({ item, onReply }) {
 
   const panResponder = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dx) > 8 && Math.abs(g.dy) < 20,
+        Math.abs(g.dx) > 10 && Math.abs(g.dy) < 15,
+      onPanResponderGrant: () => {
+        replyTriggered.current = false;
+      },
       onPanResponderMove: (_, g) => {
         const direction = isMe ? Math.min(0, g.dx) : Math.max(0, g.dx);
         translateX.setValue(direction);
@@ -84,13 +88,22 @@ function MessageBubble({ item, onReply }) {
         }
       },
       onPanResponderRelease: () => {
-        replyTriggered.current = false;
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: true,
           tension: 80,
           friction: 8,
-        }).start();
+        }).start(() => {
+          replyTriggered.current = false;
+        });
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start(() => {
+          replyTriggered.current = false;
+        });
       },
     })
   ).current;
@@ -126,7 +139,6 @@ export default function MessageScreen({ route, navigation }) {
   const [input, setInput] = useState('');
   const [replyingTo, setReplyingTo] = useState(null);
   const [background, setBackground] = useState({ id: 'default', type: 'solid', value: '#1a1a2e' });
-  const flatListRef = useRef(null);
   const socketRef = useRef(null);
   const inputRef = useRef(null);
   const prevSentImage = useRef(null);
@@ -142,8 +154,7 @@ export default function MessageScreen({ route, navigation }) {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       replyTo: null,
     };
-    setMessages(prev => [...prev, imgMsg]);
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+    setMessages(prev => [imgMsg, ...prev]);
   }
 
   useEffect(() => {
@@ -153,8 +164,7 @@ export default function MessageScreen({ route, navigation }) {
     socketRef.current = socket;
 
     const handleMessage = (message) => {
-      setMessages(prev => [...prev, message]);
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+      setMessages(prev => [message, ...prev]);
     };
 
     if (socket.connected) {
@@ -176,7 +186,7 @@ export default function MessageScreen({ route, navigation }) {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      const formatted = data.map(m => ({
+      const formatted = data.reverse().map(m => ({
         id: m.id.toString(),
         text: m.text || '',
         image: m.image || null,
@@ -193,7 +203,6 @@ export default function MessageScreen({ route, navigation }) {
         },
         body: JSON.stringify({ userId, otherUserId: toUserId }),
       });
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 100);
     } catch (e) {
       console.log('fetch messages error:', e);
     }
@@ -208,10 +217,9 @@ export default function MessageScreen({ route, navigation }) {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       replyTo: replyingTo ? { text: replyingTo.text } : null,
     };
-    setMessages(prev => [...prev, newMsg]);
+    setMessages(prev => [newMsg, ...prev]);
     setInput('');
     setReplyingTo(null);
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
 
     try {
       const res = await fetch(`${SERVER_URL}/messages/send`, {
@@ -246,7 +254,7 @@ export default function MessageScreen({ route, navigation }) {
 
   const handleReply = useCallback((item) => {
     setReplyingTo(item);
-    setTimeout(() => inputRef.current?.focus(), 100);
+    setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
 
   const renderMessage = useCallback(({ item }) => (
@@ -290,12 +298,13 @@ export default function MessageScreen({ route, navigation }) {
             </View>
           )}
           <FlatList
-            ref={flatListRef}
             data={messages}
             keyExtractor={item => item.id}
             renderItem={renderMessage}
             contentContainerStyle={styles.messageList}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+            inverted
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
           />
         </View>
 
@@ -326,7 +335,6 @@ export default function MessageScreen({ route, navigation }) {
             value={input}
             onChangeText={setInput}
             multiline
-            onFocus={() => flatListRef.current?.scrollToEnd({ animated: true })}
           />
           <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
             <Text style={styles.sendIcon}>➤</Text>
@@ -348,7 +356,7 @@ const styles = StyleSheet.create({
   onlineText: { color: '#1D9E75', fontSize: 11 },
   bgBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   bgBtnIcon: { fontSize: 18 },
-  messageList: { padding: 14, gap: 10, flexGrow: 1, justifyContent: 'flex-end' },
+  messageList: { padding: 14, gap: 10 },
   msgRow: { marginVertical: 4 },
   msgRowMe: { alignItems: 'flex-end' },
   msgRowThem: { alignItems: 'flex-start' },
