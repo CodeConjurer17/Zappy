@@ -75,6 +75,14 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('background_change', (data) => {
+    const { toUserId, background, changerName } = data;
+    const recipientSocketId = onlineUsers.get(toUserId.toString());
+    if (recipientSocketId) {
+      io.to(recipientSocketId).emit('background_changed', { background, changerName });
+    }
+  });
+
   socket.on('disconnect', () => {
     onlineUsers.forEach((socketId, userId) => {
       if (socketId === socket.id) onlineUsers.delete(userId);
