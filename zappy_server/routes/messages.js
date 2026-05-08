@@ -16,24 +16,6 @@ router.post('/send', async (req, res) => {
   }
 });
 
-router.get('/:userId/:otherUserId', async (req, res) => {
-  const { userId, otherUserId } = req.params;
-  const db = req.app.locals.db;
-  try {
-    const result = await db.query(
-      `SELECT * FROM messages
-       WHERE (from_user_id = $1 AND to_user_id = $2)
-       OR (from_user_id = $2 AND to_user_id = $1)
-       ORDER BY created_at ASC`,
-      [userId, otherUserId]
-    );
-    res.json(result.rows);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'server error' });
-  }
-});
-
 router.post('/read', async (req, res) => {
   const { userId, otherUserId } = req.body;
   const db = req.app.locals.db;
@@ -78,13 +60,15 @@ router.get('/unread/:userId', async (req, res) => {
 router.post('/background', async (req, res) => {
   const { userId, otherUserId, background } = req.body;
   const db = req.app.locals.db;
+  const id1 = Math.min(userId, otherUserId);
+  const id2 = Math.max(userId, otherUserId);
   try {
     await db.query(
       `INSERT INTO chat_backgrounds (user_id, other_user_id, background)
        VALUES ($1, $2, $3)
        ON CONFLICT (user_id, other_user_id)
        DO UPDATE SET background = $3`,
-      [userId, otherUserId, JSON.stringify(background)]
+      [id1, id2, JSON.stringify(background)]
     );
     res.json({ success: true });
   } catch (e) {
@@ -95,10 +79,12 @@ router.post('/background', async (req, res) => {
 router.get('/background/:userId/:otherUserId', async (req, res) => {
   const { userId, otherUserId } = req.params;
   const db = req.app.locals.db;
+  const id1 = Math.min(userId, otherUserId);
+  const id2 = Math.max(userId, otherUserId);
   try {
     const result = await db.query(
       'SELECT background FROM chat_backgrounds WHERE user_id = $1 AND other_user_id = $2',
-      [userId, otherUserId]
+      [id1, id2]
     );
     if (result.rows.length > 0) {
       res.json({ background: JSON.parse(result.rows[0].background) });
@@ -106,6 +92,24 @@ router.get('/background/:userId/:otherUserId', async (req, res) => {
       res.json({ background: null });
     }
   } catch (e) {
+    res.status(500).json({ error: 'server error' });
+  }
+});
+
+router.get('/:userId/:otherUserId', async (req, res) => {
+  const { userId, otherUserId } = req.params;
+  const db = req.app.locals.db;
+  try {
+    const result = await db.query(
+      `SELECT * FROM messages
+       WHERE (from_user_id = $1 AND to_user_id = $2)
+       OR (from_user_id = $2 AND to_user_id = $1)
+       ORDER BY created_at ASC`,
+      [userId, otherUserId]
+    );
+    res.json(result.rows);
+  } catch (e) {
+    console.error(e);
     res.status(500).json({ error: 'server error' });
   }
 });
