@@ -1,9 +1,9 @@
 import {
   View, Text, StyleSheet, FlatList,
   TouchableOpacity, TextInput, KeyboardAvoidingView,
-  Platform, Animated, PanResponder, Image, StatusBar
+  Platform, Animated, PanResponder, Image, StatusBar as RNStatusBar
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { SERVER_URL } from '../config';
 import { getSocket } from '../socket';
@@ -160,22 +160,14 @@ export default function MessageScreen({ route, navigation }) {
   const socketRef = useRef(null);
   const inputRef = useRef(null);
   const prevSentImage = useRef(null);
-
-  const sentImage = route.params?.sentImage;
-  if (sentImage && sentImage !== prevSentImage.current) {
-    prevSentImage.current = sentImage;
-    const imgMsg = {
-      id: Date.now().toString(),
-      text: '',
-      image: sentImage,
-      sender: 'me',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      replyTo: null,
-    };
-    setMessages(prev => [imgMsg, ...prev]);
-  }
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
+    if (Platform.OS === 'android') {
+      RNStatusBar.setTranslucent(true);
+      RNStatusBar.setBackgroundColor('transparent');
+    }
+
     fetchMessages();
     fetchBackground();
 
@@ -210,6 +202,10 @@ export default function MessageScreen({ route, navigation }) {
     return () => {
       socket.off('receive_message', handleMessage);
       socket.off('background_changed', handleBackgroundChanged);
+      if (Platform.OS === 'android') {
+        RNStatusBar.setTranslucent(false);
+        RNStatusBar.setBackgroundColor('#252540');
+      }
     };
   }, []);
 
@@ -322,6 +318,20 @@ export default function MessageScreen({ route, navigation }) {
     <MessageBubble item={item} onReply={handleReply} />
   ), [handleReply]);
 
+  const sentImage = route.params?.sentImage;
+  if (sentImage && sentImage !== prevSentImage.current) {
+    prevSentImage.current = sentImage;
+    const imgMsg = {
+      id: Date.now().toString(),
+      text: '',
+      image: sentImage,
+      sender: 'me',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      replyTo: null,
+    };
+    setMessages(prev => [imgMsg, ...prev]);
+  }
+
   return (
     <View style={styles.container}>
       {background.type === 'gradient' && (
@@ -334,7 +344,7 @@ export default function MessageScreen({ route, navigation }) {
         <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1a1a2e' }]} />
       )}
 
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+      <View style={{ flex: 1, paddingTop: insets.top }}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Text style={styles.backArrow}>←</Text>
@@ -426,7 +436,7 @@ export default function MessageScreen({ route, navigation }) {
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }
