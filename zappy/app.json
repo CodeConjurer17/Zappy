@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       
-      "package": "com.anonymous.zappy",
+      "package": "com.anonymous.zappy"
     },
     "web": {
       "favicon": "./assets/favicon.png"
