@@ -21,7 +21,6 @@
         "foregroundImage": "./assets/zappy_logo.png",
         "backgroundColor": "#ffffff"
       },
-      
       "package": "com.anonymous.zappy",
       "softwareKeyboardLayoutMode": "resize"
     },

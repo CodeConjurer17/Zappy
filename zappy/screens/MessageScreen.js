@@ -10,6 +10,7 @@ import { getSocket } from '../socket';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const SWIPE_THRESHOLD = 60;
+const Wrapper = Platform.OS === 'ios' ? KeyboardAvoidingView : View;
 
 function PatternOverlay({ pattern }) {
   const c = '#ffffff10';
@@ -380,10 +381,9 @@ export default function MessageScreen({ route, navigation }) {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView
+      <Wrapper
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
+        behavior="padding"
       >
         <View style={{ flex: 1 }}>
           {background.type === 'pattern' && (
@@ -414,7 +414,7 @@ export default function MessageScreen({ route, navigation }) {
           </View>
         )}
 
-        <View style={[styles.inputBar, { paddingBottom: insets.bottom || 12 }]}>
+        <View style={styles.inputBar}>
           <TouchableOpacity
             style={styles.cameraBtn}
             onPress={() => navigation.navigate('Camera', { userId, toUserId, token })}
@@ -434,7 +434,7 @@ export default function MessageScreen({ route, navigation }) {
             <Text style={styles.sendIcon}>➤</Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </Wrapper>
     </View>
   );
 }
