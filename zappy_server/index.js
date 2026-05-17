@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 
 
 const app = express();
+app.set('trust proxy', 1);
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 const limiter = rateLimit({

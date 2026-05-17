@@ -221,20 +221,22 @@ export default function MessageScreen({ route, navigation }) {
     }
   };
 
-  const saveBackground = async (bg) => {
-    try {
-      await fetch(`${SERVER_URL}/messages/background`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userId, otherUserId: toUserId, background: bg }),
-      });
-    } catch (e) {
-      console.log('save background error:', e);
-    }
-  };
+const saveBackground = async (bg) => {
+  try {
+    const res = await fetch(`${SERVER_URL}/messages/background`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ userId, otherUserId: toUserId, background: bg }),
+    });
+    const data = await res.json();
+    console.log('save background response:', res.status, data);
+  } catch (e) {
+    console.log('save background error:', e);
+  }
+};
 
   const fetchMessages = async () => {
     try {

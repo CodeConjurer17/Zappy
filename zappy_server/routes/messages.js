@@ -60,8 +60,8 @@ router.get('/unread/:userId', async (req, res) => {
 router.post('/background', async (req, res) => {
   const { userId, otherUserId, background } = req.body;
   const db = req.app.locals.db;
-  const id1 = Math.min(userId, otherUserId);
-  const id2 = Math.max(userId, otherUserId);
+  const id1 = Math.min(parseInt(userId), parseInt(otherUserId));
+  const id2 = Math.max(parseInt(userId), parseInt(otherUserId));
   try {
     await db.query(
       `INSERT INTO chat_backgrounds (user_id, other_user_id, background)
@@ -72,6 +72,7 @@ router.post('/background', async (req, res) => {
     );
     res.json({ success: true });
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: 'server error' });
   }
 });
@@ -79,8 +80,8 @@ router.post('/background', async (req, res) => {
 router.get('/background/:userId/:otherUserId', async (req, res) => {
   const { userId, otherUserId } = req.params;
   const db = req.app.locals.db;
-  const id1 = Math.min(userId, otherUserId);
-  const id2 = Math.max(userId, otherUserId);
+  const id1 = Math.min(parseInt(userId), parseInt(otherUserId));
+  const id2 = Math.max(parseInt(userId), parseInt(otherUserId));
   try {
     const result = await db.query(
       'SELECT background FROM chat_backgrounds WHERE user_id = $1 AND other_user_id = $2',
@@ -92,6 +93,7 @@ router.get('/background/:userId/:otherUserId', async (req, res) => {
       res.json({ background: null });
     }
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: 'server error' });
   }
 });
