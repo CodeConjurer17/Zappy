@@ -414,7 +414,7 @@ export default function MessageScreen({ route, navigation }) {
           </View>
         )}
 
-        <View style={styles.inputBar}>
+        <View style={[styles.inputBar, { paddingBottom: insets.bottom || 12 }]}>
           <TouchableOpacity
             style={styles.cameraBtn}
             onPress={() => navigation.navigate('Camera', { userId, toUserId, token })}
