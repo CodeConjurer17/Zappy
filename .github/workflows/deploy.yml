@@ -10,11 +10,16 @@ jobs:
     name: Deploy
     runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
+      - name: Pull latest code
+        run: |
+          cd ~/apps/zappy
+          git stash
+          git pull origin main
+          git stash pop
 
       - name: Install dependencies
         run: |
-          cd zappy_server
+          cd ~/apps/zappy/zappy_server
           npm install
 
       - name: Restart PM2
