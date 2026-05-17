@@ -23,7 +23,6 @@
       },
       
       "package": "com.anonymous.zappy",
-      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png"
