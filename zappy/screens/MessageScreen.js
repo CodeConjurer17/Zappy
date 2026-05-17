@@ -385,7 +385,8 @@ const saveBackground = async (bg) => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={0}
       >
         <View style={{ flex: 1 }}>
           {background.type === 'pattern' && (
@@ -472,10 +473,10 @@ const styles = StyleSheet.create({
   replyBarLabel: { color: '#7F77DD', fontSize: 11 },
   replyBarText: { color: '#ccc', fontSize: 12 },
   replyCancel: { color: '#666', fontSize: 16, padding: 4 },
-  inputBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#252540', paddingHorizontal: 10, paddingTop: 10, gap: 8, borderTopWidth: 0.5, borderTopColor: '#2a2a4a' },
-  cameraBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  cameraBtnIcon: { fontSize: 20 },
-  input: { flex: 1, backgroundColor: '#1a1a2e', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, color: 'white', fontSize: 14, maxHeight: 100 },
-  sendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#7F77DD', alignItems: 'center', justifyContent: 'center' },
-  sendIcon: { color: 'white', fontSize: 14 },
+  inputBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#252540', padding: 12, gap: 10, borderTopWidth: 0.5, borderTopColor: '#2a2a4a', paddingBottom: insets.bottom + 12 },
+  cameraBtn: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
+  cameraBtnIcon: { fontSize: 24 },
+  input: { flex: 1, backgroundColor: '#1a1a2e', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, color: 'white', fontSize: 16, maxHeight: 120 },
+  sendBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: '#7F77DD', alignItems: 'center', justifyContent: 'center' },
+  sendIcon: { color: 'white', fontSize: 16 },
 });
