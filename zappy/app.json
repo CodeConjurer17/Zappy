@@ -21,8 +21,9 @@
         "foregroundImage": "./assets/zappy_logo.png",
         "backgroundColor": "#ffffff"
       },
+      
       "package": "com.anonymous.zappy",
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "favicon": "./assets/favicon.png"
