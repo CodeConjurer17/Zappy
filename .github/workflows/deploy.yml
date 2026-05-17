@@ -13,9 +13,9 @@ jobs:
       - name: Pull latest code
         run: |
           cd ~/apps/zappy
-          git stash
+          git fetch origin
+          git checkout -- zappy_server/.env
           git pull origin main
-          git stash pop
 
       - name: Install dependencies
         run: |
