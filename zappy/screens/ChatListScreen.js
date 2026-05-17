@@ -54,6 +54,7 @@ export default function ChatListScreen({ navigation, route }) {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
+      console.log('friends:', res.status, data);
       setFriends(data);
     } catch (e) {
       console.log('fetch friends error:', e);

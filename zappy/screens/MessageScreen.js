@@ -385,8 +385,7 @@ const saveBackground = async (bg) => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={{ flex: 1 }}>
           {background.type === 'pattern' && (
