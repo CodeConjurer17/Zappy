@@ -221,22 +221,20 @@ export default function MessageScreen({ route, navigation }) {
     }
   };
 
-const saveBackground = async (bg) => {
-  try {
-    const res = await fetch(`${SERVER_URL}/messages/background`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ userId, otherUserId: toUserId, background: bg }),
-    });
-    const data = await res.json();
-    console.log('save background response:', res.status, data);
-  } catch (e) {
-    console.log('save background error:', e);
-  }
-};
+  const saveBackground = async (bg) => {
+    try {
+      await fetch(`${SERVER_URL}/messages/background`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId, otherUserId: toUserId, background: bg }),
+      });
+    } catch (e) {
+      console.log('save background error:', e);
+    }
+  };
 
   const fetchMessages = async () => {
     try {
@@ -346,7 +344,6 @@ const saveBackground = async (bg) => {
         <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1a1a2e' }]} />
       )}
 
-      {/* TOP BAR - extends to status bar */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backArrow}>←</Text>
@@ -385,8 +382,8 @@ const saveBackground = async (bg) => {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={0}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        enabled={Platform.OS === 'ios'}
       >
         <View style={{ flex: 1 }}>
           {background.type === 'pattern' && (
@@ -417,8 +414,7 @@ const saveBackground = async (bg) => {
           </View>
         )}
 
-        {/* BOTTOM BAR - extends to bottom edge */}
-        <View style={[styles.inputBar, { paddingBottom: insets.bottom + 10 }]}>
+        <View style={styles.inputBar}>
           <TouchableOpacity
             style={styles.cameraBtn}
             onPress={() => navigation.navigate('Camera', { userId, toUserId, token })}
@@ -473,7 +469,7 @@ const styles = StyleSheet.create({
   replyBarLabel: { color: '#7F77DD', fontSize: 11 },
   replyBarText: { color: '#ccc', fontSize: 12 },
   replyCancel: { color: '#666', fontSize: 16, padding: 4 },
-  inputBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#252540', padding: 12, gap: 10, borderTopWidth: 0.5, borderTopColor: '#2a2a4a', paddingBottom: insets.bottom + 12 },
+  inputBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#252540', padding: 12, gap: 10, borderTopWidth: 0.5, borderTopColor: '#2a2a4a' },
   cameraBtn: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center' },
   cameraBtnIcon: { fontSize: 24 },
   input: { flex: 1, backgroundColor: '#1a1a2e', borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, color: 'white', fontSize: 16, maxHeight: 120 },
