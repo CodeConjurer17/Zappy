@@ -22,7 +22,8 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.anonymous.zappy",
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "edgeToEdgeEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
