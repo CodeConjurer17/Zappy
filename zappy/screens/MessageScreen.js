@@ -383,7 +383,7 @@ export default function MessageScreen({ route, navigation }) {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={insets.top}
+        keyboardVerticalOffset={0}
       >
         <View style={{ flex: 1 }}>
           {background.type === 'pattern' && (
