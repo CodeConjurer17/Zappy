@@ -14,8 +14,8 @@ jobs:
         run: |
           cd ~/apps/zappy
           git fetch origin
-          git checkout -- zappy_server/.env
-          git pull origin main
+          git reset --hard origin/main
+          git clean -fd --exclude=zappy_server/.env
 
       - name: Install dependencies
         run: |
