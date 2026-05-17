@@ -68,7 +68,7 @@ router.post('/background', async (req, res) => {
        VALUES ($1, $2, $3)
        ON CONFLICT (user_id, other_user_id)
        DO UPDATE SET background = $3`,
-      [id1, id2, JSON.stringify(background)]
+      [id1, id2, background]
     );
     res.json({ success: true });
   } catch (e) {
@@ -88,7 +88,7 @@ router.get('/background/:userId/:otherUserId', async (req, res) => {
       [id1, id2]
     );
     if (result.rows.length > 0) {
-      res.json({ background: JSON.parse(result.rows[0].background) });
+      res.json({ background: result.rows[0].background });
     } else {
       res.json({ background: null });
     }
